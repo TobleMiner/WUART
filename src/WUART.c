@@ -1,9 +1,3 @@
-#include "WUART.h"
-
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <util/delay.h>
 /*
 Copyright (c) 2014 Tobias Schramm
 
@@ -26,6 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include "WUART.h"
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <util/delay.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
