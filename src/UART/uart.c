@@ -52,6 +52,10 @@ void uart_set_baudrate(uint32_t baudrate)
 void uart_init_rx(void)
 {
 	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
+	#if UART_ENABLE_FLOWCONTROL == TRUE
+		UART_CTS_DDR |= (1<<UART_CTS_PIN);
+		UART_CTS_PORT |= (1<<UART_CTS_PIN);
+	#endif
 }
 
 uint32_t uart_data_available(void)
@@ -77,6 +81,10 @@ uint32_t uart_read(uint8_t* data, uint32_t len)
 	}
 	sei();
 	uart_rx_data_len -= tlen;
+	#if UART_ENABLE_FLOWCONTROL == TRUE
+		if(uart_rx_data_len < UART_FLOWCONTROL_BUFF_FILL)
+			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+	#endif
 	return tlen;
 }
 
@@ -90,7 +98,11 @@ void uart_irq_rx(void)
 		tmpptr = uart_rx_ring;
 	}
 	uart_rx_targpos_ring = tmpptr;
-	uart_rx_data_len++;	
+	uart_rx_data_len++;
+	#if UART_ENABLE_FLOWCONTROL == TRUE
+		if(uart_rx_data_len > UART_FLOWCONTROL_BUFF_FILL)
+			UART_CTS_PORT &= ~(1<<UART_CTS_PIN);
+	#endif
 }
 
 #if UART_IRQ_HOOK_RX != TRUE

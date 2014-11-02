@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 #include "WUART.h"
+#include "config/config.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>

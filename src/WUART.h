@@ -22,10 +22,13 @@ THE SOFTWARE.
 
 #ifndef __WUART_H__
 #define __WUART_H__
-	#define F_CPU	8000000UL
-	#define DLEVEL	0
-	#define ADDR_ME {0x13, 0x37, 0x13, 0x37, 0x42}
-	#define ADDR_P {0x42, 0x42, 0x42, 0x42, 0x42}
+
+	#ifndef TRUE
+		#define TRUE 1
+	#endif
+	#ifndef FALSE
+		#define FALSE 0
+	#endif
 
 	#include <stdint.h>
 	

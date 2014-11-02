@@ -35,7 +35,7 @@ THE SOFTWARE.
 	
 	//Libs
 	#include <stdint.h>
-	
+		
 	//Functions
 	extern void		uart_init(void);
 	extern void		uart_set_baudrate(uint32_t baudrate);
