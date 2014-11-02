@@ -90,12 +90,12 @@ int main(void)
 		sleep_cpu();
 		if(!NRF.sending && uart_data_available() && (uart_data_available() >= WIRELESS_PACK_LEN || uart_timeout >= uart_threshold))
 		{
-			uint8_t* data = malloc(32);
+			uint8_t* data = malloc(WIRELESS_PACK_LEN);
 			uint8_t* dataptr = data + 1;
 			#if DLEVEL >= 2
 				uart_write_async("Trying uart data read...\n");
 			#endif
-			uint8_t len = uart_read(dataptr, 31);
+			uint8_t len = uart_read(dataptr, WIRELESS_PACK_LEN - 1);
 			#if DLEVEL >= 2
 				char* str = malloc(20);
 				sprintf(str, "Sending %u bytes\n", len);
@@ -103,14 +103,17 @@ int main(void)
 				free(str);
 			#endif
 			*data = len;
-			NRF24L01_send_data(data, 32);
+			NRF24L01_send_data(data, WIRELESS_PACK_LEN);
 			NRF.sending = TRUE;
 			free(data);
 		}
 		if(NRF.data_ready)
 		{
-			uint8_t* data = malloc(32);
-			NRF24L01_get_received_data(data, 32);
+			uint8_t* data = malloc(WIRELESS_PACK_LEN);
+			uint8_t cnt;
+			for(cnt = 0; cnt < WIRELESS_PACK_LEN; cnt++)
+				data[cnt] = 0;
+			NRF24L01_get_received_data(data, WIRELESS_PACK_LEN);
 			NRF.data_ready = FALSE;
 			#if DLEVEL >= 2
 				char* str = malloc(20);
@@ -118,6 +121,8 @@ int main(void)
 				uart_write_async(str);
 				free(str);
 			#endif
+			if(*data >= WIRELESS_PACK_LEN)
+				*data = WIRELESS_PACK_LEN - 1;
 			uart_send_async(data, 1, *data);
 			free(data); 
 		}
