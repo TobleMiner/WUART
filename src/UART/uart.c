@@ -67,7 +67,6 @@ uint32_t uart_read(uint8_t* data, uint32_t len)
 {
 	uint32_t tlen = 0;
 	uint8_t* tptr = data;
-	cli();
 	while(tlen < len && uart_rx_curpos_ring != uart_rx_targpos_ring)
 	{
 		*tptr = *uart_rx_curpos_ring;
@@ -79,7 +78,6 @@ uint32_t uart_read(uint8_t* data, uint32_t len)
 			uart_rx_curpos_ring = uart_rx_ring;
 		}
 	}
-	sei();
 	uart_rx_data_len -= tlen;
 	#if UART_ENABLE_FLOWCONTROL == TRUE
 		if(uart_rx_data_len < UART_FLOWCONTROL_BUFF_FILL)

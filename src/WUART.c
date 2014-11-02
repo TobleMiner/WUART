@@ -110,9 +110,6 @@ int main(void)
 		if(NRF.data_ready)
 		{
 			uint8_t* data = malloc(WIRELESS_PACK_LEN);
-			uint8_t cnt;
-			for(cnt = 0; cnt < WIRELESS_PACK_LEN; cnt++)
-				data[cnt] = 0;
 			NRF24L01_get_received_data(data, WIRELESS_PACK_LEN);
 			NRF.data_ready = FALSE;
 			#if DLEVEL >= 2
@@ -121,7 +118,7 @@ int main(void)
 				uart_write_async(str);
 				free(str);
 			#endif
-			if(*data >= WIRELESS_PACK_LEN)
+			if(*data > WIRELESS_PACK_LEN - 1)
 				*data = WIRELESS_PACK_LEN - 1;
 			uart_send_async(data, 1, *data);
 			free(data); 
