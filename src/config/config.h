@@ -22,7 +22,12 @@ THE SOFTWARE.
 
 #ifndef __WUART_CONF__
 #define __WUART_CONF__
-	#define F_CPU			8000000UL
+	#ifdef F_OSC
+		#define F_CPU F_OSC
+	#else
+		#define F_CPU			8000000UL
+	#endif
+	
 	#define DLEVEL			0
 	#define ADDR_ME			{0x42, 0x42, 0x42, 0x42, 0x42}
 	#define ADDR_P			{0x13, 0x37, 0x13, 0x37, 0x42}
