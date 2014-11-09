@@ -54,7 +54,9 @@ int main(void)
 {
 	NRF.sending = FALSE;
 	NRF.data_ready = FALSE;
-	NRF.cmd_mode = FALSE;
+	#if ENABLE_CMD_MODE
+		NRF.cmd_mode = FALSE;
+	#endif
 	TCCR0B = (1<<CS02); //timer0: Prescaler = 256 => ~122 Hz
 	TIMSK0 = (1<<TOIE0); //timer0: Enable overflow interrupt
 	EICRA = (1<<ISC01);	//Set external interrupt on falling edge for INT0
@@ -63,10 +65,12 @@ int main(void)
 		EICRA |= (1<<ISC10);
 		EIMSK |= (1<<INT1);
 		NRF.cmd_mode = (PIND & (1<<PIND3)) > 0;
-		if(NRF.cmd_mode)
-			uart_write_async("Entering command mode\n");
-		else
-			uart_write_async("Leaving command mode\n");
+		#if DLEVEL >= 2
+			if(NRF.cmd_mode)
+				uart_write_async("Entering command mode\n");
+			else
+				uart_write_async("Leaving command mode\n");
+		#endif
 	#endif
 	uart_init();
 	uart_init_rx();
@@ -116,7 +120,7 @@ int main(void)
         set_sleep_mode(SLEEP_MODE_IDLE);
 		sleep_enable();
 		sleep_cpu();
-		#ifdef ENABLE_CMD_MODE
+		#if ENABLE_CMD_MODE
 			if(NRF.cmd_mode)
 			{
 				if(uart_data_available() >= UART_BUFF_LEN_RX)
@@ -193,13 +197,13 @@ int main(void)
 					uart_send_async(data, 1, *data);
 					free(data);
 				}
-		#ifdef ENABLE_CMD_MODE
+		#if ENABLE_CMD_MODE
 			}
 		#endif
 	}
 }
 
-#ifdef ENABLE_CMD_MODE
+#if ENABLE_CMD_MODE
 	uint8_t process_cmd(char** args, uint8_t argnum)
 	{
 		if(argnum == 0)
