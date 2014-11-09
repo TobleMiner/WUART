@@ -127,9 +127,11 @@ THE SOFTWARE.
 		{
 			uint8_t lna_hcurr:1;
 			uint8_t rf_pwr:2;
-			uint8_t rf_dr:1;
+			uint8_t rf_dr_high:1;
 			uint8_t pll_lock:1;
-			uint8_t reserved:3;
+			uint8_t rf_dr_low:1;
+			uint8_t reserved:1;
+			uint8_t cont_wave:1;
 		};
 		uint8_t value;
 	}
@@ -431,10 +433,17 @@ THE SOFTWARE.
 	#endif
 	
 	#if WIRELESS_BAUDRATE == 2000
-		#define NRF24L01_PRESET_BAUDRATE 1
+		#define NRF24L01_PRESET_BAUDRATE_HIGH	1
+		#define NRF24L01_PRESET_BAUDRATE_LOW	0
 	#endif
 	#if WIRELESS_BAUDRATE == 1000
-		#define NRF24L01_PRESET_BAUDRATE 0
+		#define NRF24L01_PRESET_BAUDRATE_HIGH	0
+		#define NRF24L01_PRESET_BAUDRATE_LOW	0
+	#endif
+	#if WIRELESS_BAUDRATE == 250
+		#pragma message "This option works only with NRF24L01+"
+		#define NRF24L01_PRESET_BAUDRATE_HIGH	0
+		#define NRF24L01_PRESET_BAUDRATE_LOW	1
 	#endif
 	
 	#define NRF24L01_PRESET_RX WIRELESS_RX_ENABLED

@@ -73,9 +73,8 @@ int main(void)
 		#endif
 	#endif
 	uart_init();
-	uart_init_rx();
 	uart_init_tx();
-	sei();
+ 	sei();
 	NRF24L01_init();
 	#if DLEVEL >= 2
 		uart_write_async("NRF initialized\n");
@@ -115,7 +114,9 @@ int main(void)
 		if(NRF.cmd_mode)
 			uart_write_async("Entering command mode\n");
 	#endif
-    while(1)
+	uart_flush_rx(); //Ready, initialize UART to defined state
+	uart_init_rx();
+	while(1)
     {
         set_sleep_mode(SLEEP_MODE_IDLE);
 		sleep_enable();
@@ -215,6 +216,10 @@ int main(void)
 			uart_write_async(cmd);
 			uart_write_async("\n");
 		#endif
+		if(strcmp(cmd, "AT") == 0)
+		{
+			return PROCESS_RESULT_OK;
+		}
 		if(strcmp(cmd, "ATA") == 0)
 		{
 			if(argnum < 5)
@@ -268,7 +273,7 @@ int main(void)
 			if(argnum < 1)
 				return PROCESS_RESULT_TOO_FEW_ARGS;
 			uint8_t rf_dr = (uint8_t)strtol(args[1], NULL, 0);
-			if(rf_dr > 1)
+			if(rf_dr > 2)
 				return PROCESS_RESULT_ARG_OUT_OF_RANGE;
 			NRF24L01_set_rf_dr(rf_dr);
 			return PROCESS_RESULT_OK;

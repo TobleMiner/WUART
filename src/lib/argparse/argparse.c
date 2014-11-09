@@ -43,15 +43,17 @@ extern uint8_t args_split(char* str, char*** args)
 	char* ptr_last = str;
 	while(ptr != NULL)
 	{
-		argptr = realloc(argptr, sizeof(char*) * (argcnt + 1));
-		if(argptr == NULL)
+		char** t_argptr = realloc(argptr, sizeof(char*) * (argcnt + 1));
+		if(t_argptr == NULL)
 		{
 			free(allocated);
+			args_free(argptr, argcnt);
 			#if ARGS_DLEVEL >= 1
 				uart_write_async("ARGSPLIT: Failed to realloc arg buff\n");
 			#endif
 			return 0; //Failed to realloc mem
 		}
+		argptr = t_argptr;
 		char** targptr = argptr + argcnt;
 		char* arg = malloc(ptr - ptr_last + 1);
 		if(arg == NULL)

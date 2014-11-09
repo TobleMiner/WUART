@@ -30,8 +30,8 @@ THE SOFTWARE.
 	#error "Invalid wireless channel. Your wireless channel must be inside [0 ... 125]"
 #endif
 
-#if WIRELESS_BAUDRATE != 1000 && WIRELESS_BAUDRATE != 2000
-	#error "Invalid wireless baudrate. Must be either 1000 [kbps] or 2000 [kbps]"
+#if WIRELESS_BAUDRATE != 250 && WIRELESS_BAUDRATE != 1000 && WIRELESS_BAUDRATE != 2000
+	#error "Invalid wireless baudrate. Must be either 250 [kbps], 1000 [kbps] or 2000 [kbps]"
 #endif
 
 #if WIRELESS_PACK_LEN < 0 || WIRELESS_PACK_LEN > 32

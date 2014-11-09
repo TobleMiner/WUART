@@ -58,7 +58,8 @@ extern void NRF24L01_init(void)
 	nrf24l01_rf_setup_t* rf_setup = malloc(sizeof(nrf24l01_rf_setup_t));
 	rf_setup->value = 0;
 	rf_setup->rf_pwr = NRF24L01_PRESET_TXPWR;
-	rf_setup->rf_dr = NRF24L01_PRESET_BAUDRATE;
+	rf_setup->rf_dr_high = NRF24L01_PRESET_BAUDRATE_HIGH;
+	rf_setup->rf_dr_low = NRF24L01_PRESET_BAUDRATE_LOW;
 	NRF24L01_LOW_set_register(NRF24L01_REG_RF_SETUP, rf_setup->value);
 	free(rf_setup);
 	nrf24l01_rx_pw_t* payload_width = malloc(sizeof(nrf24l01_rx_pw_t));
@@ -112,7 +113,12 @@ extern void NRF24L01_set_rf_dr(uint8_t data_rate)
 {
 	nrf24l01_rf_setup_t* rf_setup = malloc(sizeof(nrf24l01_rf_setup_t));
 	rf_setup->value = NRF24L01_LOW_get_register(NRF24L01_REG_RF_SETUP);
-	rf_setup->rf_dr = data_rate;
+	switch(data_rate)
+	{
+		case 0: rf_setup->rf_dr_high = 0; rf_setup->rf_dr_low = 1; break; //250 kbps
+		case 1: rf_setup->rf_dr_high = 0; rf_setup->rf_dr_low = 0; break; //1 Mbps
+		case 2: rf_setup->rf_dr_high = 1; rf_setup->rf_dr_low = 0; break; //2 Mbps
+	}
 	NRF24L01_LOW_set_register(NRF24L01_REG_RF_SETUP, rf_setup->value);
 	free(rf_setup);
 }
