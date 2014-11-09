@@ -22,10 +22,10 @@ THE SOFTWARE.
 
 #ifndef __WUART_CONF__
 #define __WUART_CONF__
-	#define F_CPU	8000000UL
-	#define DLEVEL	0
-	#define ADDR_ME	{0x42, 0x42, 0x42, 0x42, 0x42}
-	#define ADDR_P	{0x13, 0x37, 0x13, 0x37, 0x42}
-	#define ENABLE_CMD_MODE FALSE
-	#define PIN_INT1 PIND3
+	#define F_CPU			8000000UL
+	#define DLEVEL			0
+	#define ADDR_ME			{0x42, 0x42, 0x42, 0x42, 0x42}
+	#define ADDR_P			{0x13, 0x37, 0x13, 0x37, 0x42}
+	#define ENABLE_CMD_MODE	TRUE
+	#define PIN_INT1		PIND3
 #endif
