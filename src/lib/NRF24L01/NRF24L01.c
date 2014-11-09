@@ -90,6 +90,33 @@ extern void NRF24L01_send_data(uint8_t* data, uint8_t len)
 	NRF24L01_CE_LOW;
 }
 
+extern void NRF24L01_set_channel(uint8_t channel)
+{
+	nrf24l01_rf_ch_t* rf_ch = malloc(sizeof(nrf24l01_rf_ch_t));
+	rf_ch->value = 0;
+	rf_ch->rf_ch = channel;
+	NRF24L01_LOW_set_register(NRF24L01_REG_RF_CH, rf_ch->value);
+	free(rf_ch);
+}
+
+extern void NRF24L01_set_tx_pwr(uint8_t tx_pwr)
+{
+	nrf24l01_rf_setup_t* rf_setup = malloc(sizeof(nrf24l01_rf_setup_t));
+	rf_setup->value = NRF24L01_LOW_get_register(NRF24L01_REG_RF_SETUP);
+	rf_setup->rf_pwr = tx_pwr;
+	NRF24L01_LOW_set_register(NRF24L01_REG_RF_SETUP, rf_setup->value);
+	free(rf_setup);
+}
+
+extern void NRF24L01_set_rf_dr(uint8_t data_rate)
+{
+	nrf24l01_rf_setup_t* rf_setup = malloc(sizeof(nrf24l01_rf_setup_t));
+	rf_setup->value = NRF24L01_LOW_get_register(NRF24L01_REG_RF_SETUP);
+	rf_setup->rf_dr = data_rate;
+	NRF24L01_LOW_set_register(NRF24L01_REG_RF_SETUP, rf_setup->value);
+	free(rf_setup);
+}
+
 extern void NRF24L01_get_received_data(uint8_t* data, uint8_t len)
 {
 	NRF24L01_CSN_LOW;

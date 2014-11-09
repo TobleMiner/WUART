@@ -466,6 +466,7 @@ THE SOFTWARE.
 	extern void		NRF24L01_set_payload_width(uint8_t pipe, uint8_t width);
 	extern void		NRF24L01_flush_rx();
 	extern void		NRF24L01_flush_tx();
+	extern void		NRF24L01_set_channel(uint8_t channel);
 	
 	#include "NRF24L01.c"
 #endif

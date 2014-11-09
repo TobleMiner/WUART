@@ -86,6 +86,44 @@ uint32_t uart_read(uint8_t* data, uint32_t len)
 	return tlen;
 }
 
+uint32_t uart_read_line(char* str)
+{
+	uint32_t tlen = 0;
+	uint32_t rlen = 0;
+	char* tptr = str;
+	uint8_t do_break = FALSE;
+	while(uart_rx_curpos_ring != uart_rx_targpos_ring)
+	{
+		if(*uart_rx_curpos_ring != 0x0D && *uart_rx_curpos_ring != 0x0A) //Skip <CR>
+		{
+			*tptr = (char)*uart_rx_curpos_ring;
+			tptr++;
+			tlen++;
+		}
+		rlen++;
+		if(*uart_rx_curpos_ring == 0x0D)
+			do_break = TRUE;
+		uart_rx_curpos_ring++;
+		if(uart_rx_curpos_ring >= UART_BUFF_LEN_RX + uart_rx_ring) //Wrap pointer if necessary
+			uart_rx_curpos_ring = uart_rx_ring;
+		if(do_break)
+			break;
+	}
+	uart_rx_data_len -= rlen;
+	#if UART_ENABLE_FLOWCONTROL == TRUE
+		if(uart_rx_data_len < UART_FLOWCONTROL_BUFF_FILL)
+			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+	#endif
+	*tptr = 0;
+	return tlen;
+}
+
+void uart_flush_rx(void)
+{
+	uart_rx_data_len = 0;
+	uart_rx_curpos_ring = uart_rx_targpos_ring;
+}
+
 void uart_irq_rx(void)
 {
 	volatile uint8_t *tmpptr = uart_rx_targpos_ring;

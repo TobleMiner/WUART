@@ -55,6 +55,8 @@ THE SOFTWARE.
 	extern void		uart_init_rx(void);
 	extern uint32_t	uart_data_available(void);
 	extern uint32_t	uart_read(uint8_t* data, uint32_t len);
+	extern uint32_t	uart_read_line(char* str);
+	extern void		uart_flush_rx(void);
 	#endif
 	
 	#include "uart.c"

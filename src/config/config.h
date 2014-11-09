@@ -26,4 +26,6 @@ THE SOFTWARE.
 	#define DLEVEL	0
 	#define ADDR_ME	{0x42, 0x42, 0x42, 0x42, 0x42}
 	#define ADDR_P	{0x13, 0x37, 0x13, 0x37, 0x42}
+	#define ENABLE_CMD_MODE TRUE
+	#define PIN_INT1 PIND3
 #endif

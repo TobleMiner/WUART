@@ -33,5 +33,14 @@ THE SOFTWARE.
 	#include <stdint.h>
 	
 	int		main(void);
-	void	set_addrs(uint8_t* myaddr, uint8_t* paddr, uint8_t len);
+	void	set_addr(uint8_t* myaddr, uint8_t len);
+	void	set_addr_p(uint8_t* paddr, uint8_t len);
+	uint8_t	process_cmd(char** args, uint8_t argnum);
+	
+	#define PROCESS_RESULT_OK				0
+	#define PROCESS_RESULT_OUT_OF_MEM		1
+	#define PROCESS_RESULT_NO_CMD			2
+	#define PROCESS_RESULT_UNKNOWN_COMMAND	3
+	#define PROCESS_RESULT_TOO_FEW_ARGS		4
+	#define PROCESS_RESULT_ARG_OUT_OF_RANGE	5
 #endif

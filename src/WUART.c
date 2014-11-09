@@ -31,13 +31,20 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 
-#include "NRF24L01/NRF24L01.h"
-#include "UART/uart.h"
+#include "lib/NRF24L01/NRF24L01.h"
+#include "lib/UART/uart.h"
+#if ENABLE_CMD_MODE
+	#include "lib/argparse/argparse.h"
+#endif
 
 struct
 {
 	uint8_t sending:1;
 	uint8_t data_ready:1;
+	#if ENABLE_CMD_MODE
+		uint8_t cmd_mode:1;
+		uint8_t lf_detect:1;
+	#endif
 } NRF;
 
 uint8_t uart_timeout = 0;
@@ -47,10 +54,20 @@ int main(void)
 {
 	NRF.sending = FALSE;
 	NRF.data_ready = FALSE;
+	NRF.cmd_mode = FALSE;
 	TCCR0B = (1<<CS02); //timer0: Prescaler = 256 => ~122 Hz
 	TIMSK0 = (1<<TOIE0); //timer0: Enable overflow interrupt
 	EICRA = (1<<ISC01);	//Set external interrupt on falling edge for INT0
 	EIMSK = (1<<INT0);	//Enable INT0
+	#if ENABLE_CMD_MODE
+		EICRA |= (1<<ISC10);
+		EIMSK |= (1<<INT1);
+		NRF.cmd_mode = (PIND & (1<<PIND3)) > 0;
+		if(NRF.cmd_mode)
+			uart_write_async("Entering command mode\n");
+		else
+			uart_write_async("Leaving command mode\n");
+	#endif
 	uart_init();
 	uart_init_rx();
 	uart_init_tx();
@@ -74,63 +91,197 @@ int main(void)
 	#endif
 	NRF24L01_set_rx();
 	uint8_t myaddr[5] =  ADDR_ME;
-	uint8_t paddr[5] = ADDR_P;
+	#ifdef ADDR_P
+		uint8_t paddr[5] = ADDR_P;
+	#endif
 	#if DLEVEL >= 2
 		uart_write_async("ADDRs: ");
 		uart_send_async(myaddr, 0, 5);
-		uart_write_async(" ");
-		uart_send_async(paddr, 0, 5);
+		#ifdef ADDR_P
+			uart_write_async(" ");
+			uart_send_async(paddr, 0, 5);
+		#endif
 		uart_write_async("\n");
 	#endif
-	set_addrs(myaddr, paddr, 5);
+	set_addr(myaddr, 5);
+	#ifdef ADDR_P
+		set_addr_p(paddr, 5);
+	#endif
+	#if ENABLE_CMD_MODE && DLEVEL >= 2
+		if(NRF.cmd_mode)
+			uart_write_async("Entering command mode\n");
+	#endif
     while(1)
     {
         set_sleep_mode(SLEEP_MODE_IDLE);
 		sleep_enable();
 		sleep_cpu();
-		if(!NRF.sending && uart_data_available() && (uart_data_available() >= WIRELESS_PACK_LEN || uart_timeout >= uart_threshold))
-		{
-			uint8_t* data = malloc(WIRELESS_PACK_LEN);
-			uint8_t* dataptr = data + 1;
-			#if DLEVEL >= 2
-				uart_write_async("Trying uart data read...\n");
-			#endif
-			uint8_t len = uart_read(dataptr, WIRELESS_PACK_LEN - 1);
-			#if DLEVEL >= 2
-				char* str = malloc(20);
-				sprintf(str, "Sending %u bytes\n", len);
-				uart_write_async(str);
+		#ifdef ENABLE_CMD_MODE
+			if(NRF.cmd_mode)
+			{
+				if(uart_data_available() >= UART_BUFF_LEN_RX)
+				{
+					uart_flush_rx(); //Unstuck device
+					continue;
+				}
+				if(!NRF.lf_detect) //LF
+				{
+					continue;
+				}
+				NRF.lf_detect = FALSE;
+				#if DLEVEL >= 2
+					uart_write_async("<LF> detected\n");
+				#endif
+				uint32_t data_len = uart_data_available();
+				char* str = malloc(data_len + 1);
+				if(str == NULL)
+				{
+					#if DLEVEL >= 1
+						uart_write_async("OUT OF MEM\n");
+						continue;
+					#endif
+				}
+				uart_read_line(str);
+				uart_flush_rx();
+				char*** args = malloc(sizeof(char***));
+				uint8_t argnum = args_split(str, args);
 				free(str);
-			#endif
-			*data = len;
-			NRF24L01_send_data(data, WIRELESS_PACK_LEN);
-			NRF.sending = TRUE;
-			free(data);
-		}
-		if(NRF.data_ready)
-		{
-			uint8_t* data = malloc(WIRELESS_PACK_LEN);
-			NRF24L01_get_received_data(data, WIRELESS_PACK_LEN);
-			NRF.data_ready = FALSE;
-			#if DLEVEL >= 2
-				char* str = malloc(20);
-				sprintf(str, "Received %u bytes\n", *data);
-				uart_write_async(str);
-				free(str);
-			#endif
-			if(*data > WIRELESS_PACK_LEN - 1)
-				*data = WIRELESS_PACK_LEN - 1;
-			uart_send_async(data, 1, *data);
-			free(data); 
-		}
+				if(process_cmd(*args, argnum))
+				{
+					uart_write_async("ERROR\n");
+				}
+				else
+				{
+					uart_write_async("OK\n");
+				}
+				args_free(*args, argnum);
+				free(args);
+				continue;
+			}
+			else
+			{
+		#endif
+				if(!NRF.sending && uart_data_available() && (uart_data_available() >= WIRELESS_PACK_LEN || uart_timeout >= uart_threshold))
+				{
+					uint8_t* data = malloc(WIRELESS_PACK_LEN);
+					uint8_t* dataptr = data + 1;
+					uint8_t len = uart_read(dataptr, WIRELESS_PACK_LEN - 1);
+					#if DLEVEL >= 2
+						char* str = malloc(20);
+						sprintf(str, "Sending %u bytes\n", len);
+						uart_write_async(str);
+						free(str);
+					#endif
+					*data = len;
+					NRF24L01_send_data(data, WIRELESS_PACK_LEN);
+					NRF.sending = TRUE;
+					free(data);
+				}
+				if(NRF.data_ready)
+				{
+					uint8_t* data = malloc(WIRELESS_PACK_LEN);
+					NRF24L01_get_received_data(data, WIRELESS_PACK_LEN);
+					NRF.data_ready = FALSE;
+					#if DLEVEL >= 2
+						char* str = malloc(20);
+						sprintf(str, "Received %u bytes\n", *data);
+						uart_write_async(str);
+						free(str);
+					#endif
+					if(*data > WIRELESS_PACK_LEN - 1)
+					*data = WIRELESS_PACK_LEN - 1;
+					uart_send_async(data, 1, *data);
+					free(data);
+				}
+		#ifdef ENABLE_CMD_MODE
+			}
+		#endif
 	}
 }
 
-void set_addrs(uint8_t* myaddr, uint8_t* paddr, uint8_t len)
+#ifdef ENABLE_CMD_MODE
+	uint8_t process_cmd(char** args, uint8_t argnum)
+	{
+		if(argnum == 0)
+			return PROCESS_RESULT_NO_CMD;
+		char* cmd = args[0];
+		argnum--;
+		#if DLEVEL >= 2
+			uart_write_async("Command: ");
+			uart_write_async(cmd);
+			uart_write_async("\n");
+		#endif
+		if(strcmp(cmd, "ATA") == 0)
+		{
+			if(argnum < 5)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint8_t* addr = malloc(5);
+			args_hex_str_array_to_byte_arrays_8bit(args, 1, 5, addr);
+			set_addr(addr, 5);
+			free(addr);
+			return PROCESS_RESULT_OK;
+		}
+		if(strcmp(cmd, "ATR") == 0)
+		{
+			if(argnum < 5)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint8_t* addr = malloc(5);
+			args_hex_str_array_to_byte_arrays_8bit(args, 1, 5, addr);
+			set_addr_p(addr, 5);
+			free(addr);
+			return PROCESS_RESULT_OK;
+		}
+		if(strcmp(cmd, "ATB") == 0)
+		{
+			if(argnum < 1)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint32_t baudrate = (uint32_t)strtol(args[1], NULL, 0);
+			uart_set_baudrate(baudrate);
+			return PROCESS_RESULT_OK;
+		}
+		if(strcmp(cmd, "ATC") == 0)
+		{
+			if(argnum < 1)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint8_t channel = (uint8_t)strtol(args[1], NULL, 0);
+			if(channel > 125)
+				return PROCESS_RESULT_ARG_OUT_OF_RANGE;
+			NRF24L01_set_channel(channel);
+			return PROCESS_RESULT_OK;
+		}
+		if(strcmp(cmd, "ATP") == 0)
+		{
+			if(argnum < 1)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint8_t tx_pwr = (uint8_t)strtol(args[1], NULL, 0);
+			if(tx_pwr > 3)
+				return PROCESS_RESULT_ARG_OUT_OF_RANGE;
+			NRF24L01_set_tx_pwr(tx_pwr);
+			return PROCESS_RESULT_OK;
+		}
+		if(strcmp(cmd, "ATD") == 0)
+		{
+			if(argnum < 1)
+				return PROCESS_RESULT_TOO_FEW_ARGS;
+			uint8_t rf_dr = (uint8_t)strtol(args[1], NULL, 0);
+			if(rf_dr > 1)
+				return PROCESS_RESULT_ARG_OUT_OF_RANGE;
+			NRF24L01_set_rf_dr(rf_dr);
+			return PROCESS_RESULT_OK;
+		}
+		return PROCESS_RESULT_UNKNOWN_COMMAND;
+	}
+#endif
+
+void set_addr(uint8_t* myaddr, uint8_t len)
+{
+	NRF24L01_set_rx_addr(1, myaddr, len);
+}
+
+void set_addr_p(uint8_t* paddr, uint8_t len)
 {
 	NRF24L01_set_tx_addr(paddr, len);
-	NRF24L01_set_rx_addr(0, paddr, len);
-	NRF24L01_set_rx_addr(1, myaddr, len);
+	NRF24L01_set_rx_addr(0, paddr, len);	
 }
 
 ISR(TIMER0_OVF_vect)
@@ -151,6 +302,10 @@ ISR(TIMER0_OVF_vect)
 ISR(USART_RX_vect)
 {
 	uart_timeout = 0;
+	#if ENABLE_CMD_MODE
+		if(UDR0 == 0x0A)
+			NRF.lf_detect = TRUE;
+	#endif
 	uart_irq_rx();
 }
 
@@ -180,3 +335,17 @@ ISR(INT0_vect)
 		NRF24L01_CE_HIGH;
 	}
 }
+
+#if ENABLE_CMD_MODE
+	ISR(INT1_vect)
+	{
+		NRF.cmd_mode = (PIND & (1<<PIND3)) > 0;
+		#if DLEVEL >= 2
+			if(NRF.cmd_mode)
+				uart_write_async("Entering command mode\n");
+			else
+				uart_write_async("Leaving command mode\n");
+		#endif
+		uart_flush_rx();
+	}
+#endif
