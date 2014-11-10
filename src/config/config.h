@@ -23,9 +23,9 @@ THE SOFTWARE.
 #ifndef __WUART_CONF__
 #define __WUART_CONF__
 	#ifdef F_OSC
-		#define F_CPU F_OSC
+		#define F_CPU		F_OSC
 	#else
-		#define F_CPU			8000000UL
+		#define F_CPU		8000000UL
 	#endif
 	
 	#define DLEVEL			0

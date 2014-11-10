@@ -72,8 +72,8 @@ int main(void)
 				uart_write_async("Leaving command mode\n");
 		#endif
 	#endif
-	uart_init();
 	uart_init_tx();
+	uart_init();
  	sei();
 	NRF24L01_init();
 	#if DLEVEL >= 2

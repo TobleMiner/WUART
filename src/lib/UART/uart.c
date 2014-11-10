@@ -43,9 +43,7 @@ void uart_init(void)
 
 void uart_set_baudrate(uint32_t baudrate)
 {
-	uint16_t ubrr = (((F_CPU / (baudrate * 16.0)) + .5) - 1);
-	UBRR0H = (ubrr < 8) & 0xFF;
-	UBRR0L = ubrr & 0xFF;
+	UBRR0 = (((F_CPU / (baudrate * 16.0)) + .5) - 1);
 }
 
 #if UART_ENABLE_RX == TRUE
