@@ -51,7 +51,7 @@ THE SOFTWARE.
 	#endif
 	
 	#if UART_ENABLE_RX == TRUE
-	extern void		uart_irq_rx(void);
+	extern void		uart_irq_rx(uint8_t udr);
 	extern void		uart_init_rx(void);
 	extern uint32_t	uart_data_available(void);
 	extern uint32_t	uart_read(uint8_t* data, uint32_t len);

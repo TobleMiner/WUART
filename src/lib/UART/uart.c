@@ -122,10 +122,10 @@ void uart_flush_rx(void)
 	uart_rx_curpos_ring = uart_rx_targpos_ring;
 }
 
-void uart_irq_rx(void)
+void uart_irq_rx(uint8_t udr)
 {
 	volatile uint8_t *tmpptr = uart_rx_targpos_ring;
-	*tmpptr = UDR0; //Read received byte to ringbuffer
+	*tmpptr = udr; //Read received byte to ringbuffer
 	tmpptr++;
 	if(tmpptr >= UART_BUFF_LEN_RX + uart_rx_ring) //Wrap pointer if necessary
 	{
@@ -142,7 +142,7 @@ void uart_irq_rx(void)
 #if UART_IRQ_HOOK_RX != TRUE
 ISR(USART_RX_vect)
 {
-	uart_irq_rx();
+	uart_irq_rx(UDR0);
 }
 #endif
 #endif

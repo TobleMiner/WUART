@@ -312,10 +312,13 @@ ISR(USART_RX_vect)
 {
 	uart_timeout = 0;
 	#if ENABLE_CMD_MODE
-		if(NRF.cmd_mode && UDR0 == 0x0A)
+		uint8_t udr = UDR0;
+		if(NRF.cmd_mode && udr == 0x0A)
 			NRF.lf_detect = TRUE;
+		uart_irq_rx(udr);
+	#else
+		uart_irq_rx(UDR0);
 	#endif
-	uart_irq_rx();
 }
 
 ISR(INT0_vect)
