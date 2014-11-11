@@ -169,6 +169,13 @@ int main(void)
 				if(!NRF.sending && uart_data_available() && (uart_data_available() >= WIRELESS_PACK_LEN || uart_timeout >= uart_threshold))
 				{
 					uint8_t* data = malloc(WIRELESS_PACK_LEN);
+					if(data == NULL)
+					{
+						#if DLEVEL >= 1
+							uart_write_async("TX: OUT OF MEM\n");
+						#endif
+						continue;
+					}
 					uint8_t* dataptr = data + 1;
 					uint8_t len = uart_read(dataptr, WIRELESS_PACK_LEN - 1);
 					#if DLEVEL >= 2
@@ -185,6 +192,13 @@ int main(void)
 				if(NRF.data_ready)
 				{
 					uint8_t* data = malloc(WIRELESS_PACK_LEN);
+					if(data == NULL)
+					{
+						#if DLEVEL >= 1
+							uart_write_async("RX: OUT OF MEM\n");
+						#endif
+						continue;
+					}
 					NRF24L01_get_received_data(data, WIRELESS_PACK_LEN);
 					NRF.data_ready = FALSE;
 					#if DLEVEL >= 2
@@ -194,7 +208,7 @@ int main(void)
 						free(str);
 					#endif
 					if(*data > WIRELESS_PACK_LEN - 1)
-					*data = WIRELESS_PACK_LEN - 1;
+						*data = WIRELESS_PACK_LEN - 1;
 					uart_send_async(data, 1, *data);
 					free(data);
 				}
@@ -329,7 +343,8 @@ ISR(INT0_vect)
 		#if DLEVEL >= 2
 			uart_write_async("IRQ: Data sent\n");
 		#endif
-		NRF24L01_set_rx();
+		if(uart_data_available() < WIRELESS_PACK_LEN)
+			NRF24L01_set_rx();
 		NRF.sending = FALSE;
 	}
 	if(status & NRF24L01_MASK_STATUS_RX_DR)

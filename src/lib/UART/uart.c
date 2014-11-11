@@ -52,7 +52,11 @@ void uart_init_rx(void)
 	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
 	#if UART_ENABLE_FLOWCONTROL == TRUE
 		UART_CTS_DDR |= (1<<UART_CTS_PIN);
-		UART_CTS_PORT |= (1<<UART_CTS_PIN);
+		#if UART_CTS_INVERTED
+			UART_CTS_PORT &= ~(1<<UART_CTS_PIN);
+		#else
+			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+		#endif
 	#endif
 }
 
@@ -63,9 +67,10 @@ uint32_t uart_data_available(void)
 
 uint32_t uart_read(uint8_t* data, uint32_t len)
 {
+	volatile uint8_t* uart_rx_targpos_ring_tmp = uart_rx_targpos_ring;
 	uint32_t tlen = 0;
 	uint8_t* tptr = data;
-	while(tlen < len && uart_rx_curpos_ring != uart_rx_targpos_ring)
+	while(tlen < len && uart_rx_curpos_ring != uart_rx_targpos_ring_tmp)
 	{
 		*tptr = *uart_rx_curpos_ring;
 		tptr++;
@@ -79,18 +84,23 @@ uint32_t uart_read(uint8_t* data, uint32_t len)
 	uart_rx_data_len -= tlen;
 	#if UART_ENABLE_FLOWCONTROL == TRUE
 		if(uart_rx_data_len < UART_FLOWCONTROL_BUFF_FILL)
+		#if UART_CTS_INVERTED
+			UART_CTS_PORT &= ~(1<<UART_CTS_PIN);
+		#else
 			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+		#endif
 	#endif
 	return tlen;
 }
 
 uint32_t uart_read_line(char* str)
 {
+	volatile uint8_t* uart_rx_targpos_ring_tmp = uart_rx_targpos_ring;
 	uint32_t tlen = 0;
 	uint32_t rlen = 0;
 	char* tptr = str;
 	uint8_t do_break = FALSE;
-	while(uart_rx_curpos_ring != uart_rx_targpos_ring)
+	while(uart_rx_curpos_ring != uart_rx_targpos_ring_tmp)
 	{
 		if(*uart_rx_curpos_ring != 0x0D && *uart_rx_curpos_ring != 0x0A) //Skip <CR>
 		{
@@ -110,7 +120,11 @@ uint32_t uart_read_line(char* str)
 	uart_rx_data_len -= rlen;
 	#if UART_ENABLE_FLOWCONTROL == TRUE
 		if(uart_rx_data_len < UART_FLOWCONTROL_BUFF_FILL)
+		#if UART_CTS_INVERTED
+			UART_CTS_PORT &= ~(1<<UART_CTS_PIN);
+		#else
 			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+		#endif
 	#endif
 	*tptr = 0;
 	return tlen;
@@ -118,8 +132,10 @@ uint32_t uart_read_line(char* str)
 
 void uart_flush_rx(void)
 {
+	cli();
 	uart_rx_data_len = 0;
 	uart_rx_curpos_ring = uart_rx_targpos_ring;
+	sei();
 }
 
 void uart_irq_rx(uint8_t udr)
@@ -135,7 +151,11 @@ void uart_irq_rx(uint8_t udr)
 	uart_rx_data_len++;
 	#if UART_ENABLE_FLOWCONTROL == TRUE
 		if(uart_rx_data_len > UART_FLOWCONTROL_BUFF_FILL)
+		#if UART_CTS_INVERTED
+			UART_CTS_PORT |= (1<<UART_CTS_PIN);
+		#else
 			UART_CTS_PORT &= ~(1<<UART_CTS_PIN);
+		#endif
 	#endif
 }
 

@@ -222,6 +222,10 @@ THE SOFTWARE.
 		#define FALSE 0
 	#endif
 	
+	//GP includes
+	#include <stdlib.h>
+	#include <util/delay.h>
+	
 	//SPI lib
 	#include "spi.h"
 	

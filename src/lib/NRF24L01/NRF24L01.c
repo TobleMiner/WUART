@@ -20,10 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <stdlib.h>
-#include <util/delay.h>
-#include "spi.c"
-
 //HIGH functions
 extern void NRF24L01_init(void)
 {
@@ -48,6 +44,7 @@ extern void NRF24L01_init(void)
 	#if WIRELESS_EN_RX_IRQ != TRUE
 		config->mask_rx_dr = 1;
 	#endif
+	config->en_crc = 1;
 	NRF24L01_LOW_set_register(NRF24L01_REG_CONFIG, config->value);
 	free(config);
 	nrf24l01_rf_ch_t* rf_ch = malloc(sizeof(nrf24l01_rf_ch_t));
